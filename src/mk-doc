@@ -1,0 +1,10 @@
+#!/bin/bash
+
+die() { echo "ABORT: $*"; exit 1; }
+
+. java-path
+
+JLIST=$(./build-list.pl)
+
+$JAVADOC -quiet -d javadoc/ $JLIST
+

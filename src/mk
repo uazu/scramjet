@@ -1,0 +1,72 @@
+#!/bin/bash
+
+die() { echo "ABORT: $*"; exit 1; }
+
+. java-path
+
+mkdir -p out
+
+# Check if we're attempting to build Eclipse-related stuff
+set classpath/*eclipse*.jar
+WITH_ECLIPSE=0
+[ -f "$1" ] && WITH_ECLIPSE=1
+
+# Build class files
+if [ "$WITH_ECLIPSE" = "1" ]
+then
+    JLIST=$(./build-list.pl)
+else
+    JLIST=$(./build-list.pl | fgrep -v eclipse)
+fi
+CP=$PWD/classpath
+$JAVAC -cp $(echo $CP/*.jar | sed 's/ /:/g') -g -d out $JLIST || die JAVAC failed
+
+
+# Build normal scramjet JAR
+cd out || die "Can't cd to 'out'"
+echo "Manifest-Version: 1.0" >scramjet.mf
+echo "Main-Class: net/uazu/scramjet/Scramjet" >>scramjet.mf
+echo -n "Class-Path:" >>scramjet.mf
+for xx in $CP/*.jar
+do
+    echo "  $xx" >>scramjet.mf
+done
+
+$JAR cfm scramjet.jar scramjet.mf $(find . -name "*.class") || die JAR failed
+
+
+# Build Eclipse plugin JAR
+[ "$WITH_ECLIPSE" = "1" ] && {
+  cp ../net/uazu/scramjet/eclipse/plugin.xml . || die "Can't find plugin.xml"
+  cp ../net/uazu/scramjet/eclipse/plugin-manifest.mf . || die "Can't find plugin-manifest.mf"
+  set $(fgrep Bundle-Version plugin-manifest.mf)
+  $JAR cfm net.uazu.scramjet_$2.jar plugin-manifest.mf plugin.xml $(find . -name "*.class") || 
+    die JAR failed
+}
+
+
+# Build C front-ends
+if [ ! -f scramjet ] || [ ../c/scramjet.c -nt scramjet ]
+then
+    COMPILE="gcc -g ../c/scramjet.c"
+
+    # Standard front-end and aliases
+    $COMPILE -o scramjet || die CC failed
+    for xx in sj-classpath sj-alias sj-threads
+    do
+      rm $xx >/dev/null 2>&1
+      ln scramjet $xx
+    done
+
+    # Eclipse front-end and aliases
+    $COMPILE '-DSCRAMJET_ECLIPSE=1' \
+        '-DAPP_NAME="scramjet-eclipse"' \
+        '-DJVM_NAME="Eclipse"' \
+        '-DJVM_START_EXAMPLE="/opt/eclipse/eclipse"' \
+        -o scramjet-eclipse || die CC failed
+    for xx in jasted
+    do
+      rm $xx >/dev/null 2>&1
+      ln scramjet-eclipse $xx
+    done
+fi

@@ -1,0 +1,17 @@
+# File included to set up JAVAC, JAR and JAVADOC.  If JBIN is not set
+# below, then uses executables found in PATH.
+
+#JBIN=/usr/lib/jvm/java-6-openjdk/bin
+#JBIN=/opt/java/jdk1.7.0_01/bin
+
+if [ -d "$JBIN" ]
+then
+  JAVAC=$JBIN/javac
+  JAR=$JBIN/jar
+  JAVADOC=$JBIN/javadoc
+else
+  JAVAC=`which javac`
+  JAR=`which jar`
+  JAVADOC=`which javadoc`
+fi
+
