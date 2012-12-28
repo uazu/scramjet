@@ -382,6 +382,9 @@ public class SJProxy extends Thread {
             String cmd = sjc.cmd;
             String alias = Scramjet.aliases.get(cmd);
             if (alias != null) cmd = alias;
+            // Allow path-like specification of package/ClassName and
+            // convert to dots
+            cmd = cmd.replace("/", ".");
             try {
                Class<?> clas = Class.forName(cmd);
                if (!Tool.class.isAssignableFrom(clas))

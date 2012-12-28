@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <poll.h>
+#include <dirent.h>
 
 #define DEBUG 0
 #define DEBUG_MESSAGES 0
@@ -48,8 +49,10 @@
 #ifndef JVM_NAME
 #define JVM_NAME "JVM"
 #endif
+#undef STANDARD_STARTUP
 #ifndef JVM_START_EXAMPLE
 #define JVM_START_EXAMPLE "java -jar scramjet.jar"
+#define STANDARD_STARTUP
 #endif
 
 typedef unsigned int uint;
@@ -116,10 +119,8 @@ usage() {
 #ifndef SCRAMJET_ECLIPSE
       NL "  idle_timeout <minutes>     (shutdown after N mins of inactivity, default 15)"
 #endif
-      NL "  alias <alias> <classname>  (set up <alias> as alias for <classname>)"
+      NL "  alias <alias>=<classname>  (set up <alias> as alias for <classname>)"
       NL "  classpath <jar-or-folder>  (add a JAR or folder to the classpath)"
-      NL "  charset <charset>          (terminal charset, default ISO-8859-1"
-      NL "                              see java.nio.charset.Charset.forName())"
    );
 }
 
@@ -138,6 +139,9 @@ StrDup(char *str) {
    if (!p) error("Out of memory");
    return p;
 }   
+
+// Path of folder containing this executable, or "."
+char *context_dir;
 
 // Temporary buffer for messages
 int tmpbuf_len;
@@ -545,7 +549,7 @@ struct ClassPath {
    ClassPath *nxt;
    char *path;
 };
-  
+
 // Config
 char *startup_cmd = NULL;
 Alias *aliases = NULL;
@@ -561,6 +565,52 @@ void
 dot_dir_fnam(char *fnam) {
    clear_tmpbuf();
    putf("%s/." APP_NAME "/%s", getenv("HOME"), fnam);
+}
+
+/**
+ * Create the default initial configuration files.
+ */
+static void 
+create_default_dot_dir_if_reqd() {
+   dot_dir_fnam(".");
+   DIR *dir = opendir(tmpbuf);
+   if (dir) {
+      closedir(dir);
+      return;
+   }
+   
+   dot_dir_fnam("");
+   strchr(tmpbuf, 0)[-1] = 0;
+   if (0 != mkdir(tmpbuf, 0700))
+      errorE("Unable to create directory: %s", tmpbuf);
+
+   dot_dir_fnam("config");
+   FILE *out = fopen(tmpbuf, "w");
+   if (!out) 
+      errorE("Unable to create config file: %s", tmpbuf);
+
+   fprintf(stderr, "*** Creating default configuration file in: %s\n", tmpbuf);
+   fprintf(stderr, "*** Edit this file if things don't work correctly\n");
+
+   fprintf(out, "# Configuration file\n");
+   fprintf(out, "\n");
+   fprintf(out, "# alias <name>=<package>.<classname>\n");
+   fprintf(out, "# classpath <jar-path>|<folder-path>\n");
+   fprintf(out, "# idle_timeout <shutdown-timeout-minutes>\n");
+   fprintf(out, "\n");
+#ifdef STANDARD_STARTUP
+   clear_tmpbuf();
+   if (context_dir[0] == '/') {
+      fprintf(out, "startup java -jar %s/scramjet.jar\n", context_dir);
+   } else {
+      fprintf(out, "startup java -jar %s/%s/scramjet.jar\n", getenv("PWD"), context_dir);
+   }
+#else
+   fprintf(out, "startup %s\n", JVM_START_EXAMPLE);
+#endif
+   
+   if (0 != fclose(out))
+      errorE("Problem writing config file: %s", tmpbuf);
 }
 
 /**
@@ -1241,8 +1291,17 @@ main(int ac, char **av) {
    char *cmd = strrchr(av[0], '/');
    char **args;
    cmd = cmd ? cmd+1 : av[0];
+
+   if (cmd) {
+      context_dir = StrDup(av[0]);
+      context_dir[cmd-av[0]] = 0;
+   } else {
+      context_dir = ".";
+   }
    ac--; av++;
 
+   create_default_dot_dir_if_reqd();
+   
    // Invoked without using an alias hard link
    if (0 == strcmp(cmd, APP_NAME)) {
       // Local options
