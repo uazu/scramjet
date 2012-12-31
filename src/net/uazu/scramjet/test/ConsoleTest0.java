@@ -165,7 +165,7 @@ public class ConsoleTest0 extends ConsoleTool implements IAreaUpdateListener {
          area.qset(yy + 1 + a/16, x + 1 + (a & 15), Console.gencc(a + 160, 070));
 
       x = 40;
-      area.box(0170, yy, x+1, 7, 16);
+      area.box(yy, x+1, 7, 16, 0170);
       area.vstrut(yy, x+6, 7);
       area.vstrut(yy, x+11, 7);
       area.hstrut(yy+2, x+1, 16);

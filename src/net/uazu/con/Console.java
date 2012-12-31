@@ -814,7 +814,7 @@ public class Console {
       if (disp == null || disp.rows != tif.getSY() || disp.cols != tif.getSX()) {
          disp = new Area(tif.getSY(), tif.getSX(), d_hfb);
       } else {
-         disp.clr(gencc(' ', d_hfb));
+         disp.clear(d_hfb);
       }
       d_altch = false;
       d_curs = true;

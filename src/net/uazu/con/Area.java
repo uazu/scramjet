@@ -19,11 +19,12 @@ import java.util.Arrays;
 /**
  * A buffered area of coloured characters.  A coloured character is
  * formed using Console.gencc(ch, hfb).  See {@link Console} for
- * generating box characters.  All operations respect the current
- * clipping rectangle.  All operations automatically set the {@link
- * #updated} flag and call the update {@link #listener}, except {@link
- * #qset} which requires the caller to call {@link #updated()}
- * themselves.
+ * generating box characters.  All operations (except {@link #qset})
+ * clip correctly to the actual backing area in the case of virtual
+ * areas which are partially hidden.  All operations (except {@link
+ * #qset}) automatically set the {@link #updated} flag and call the
+ * update {@link #listener}.  (The {@link #qset} call requires the
+ * caller to do clipping and call {@link #updated()} themselves.)
  *
  * <p>To write coloured and formatted text to the Area, use a
  * temporary {@link CCBuf}.
@@ -140,7 +141,7 @@ public class Area {
 
    /**
     * Construct an area of the given size, initialised to the given
-    * 0HFB colour.
+    * HFB colour.
     */
    public Area(int sy, int sx, int hfb) {
       rows = sy < 0 ? 0 : sy;
@@ -228,7 +229,7 @@ public class Area {
       backing = area;
       arr = area.arr;
       cursorOff();
-      if (clear) clr();
+      if (clear) clear();
    }
 
    /**
@@ -283,7 +284,7 @@ public class Area {
    }
    
    /**
-    * Test whether the flashing cursor is enabled.
+    * Test whether the flashing cursor is active.
     */
    public boolean hasCursor() {
       return curs_x >= 0 && curs_y >= 0;
@@ -317,8 +318,7 @@ public class Area {
    }
 
    /**
-    * Write a coloured-character to the given location, clipped by
-    * the current clipping rectangle.
+    * Write a coloured-character to the given location.
     */
    public final void set(int y, int x, int cch) {
       if (y < clip.ay || x < clip.ax || y >= clip.by || x >= clip.bx)
@@ -329,7 +329,7 @@ public class Area {
 
    /**
     * Write a character to the given location with the given HFB
-    * colour, clipped by the current clipping rectangle.
+    * colour.
     */
    public final void set(int y, int x, int hfb, int ch) {
       if (y < clip.ay || x < clip.ax || y >= clip.by || x >= clip.bx)
@@ -339,9 +339,8 @@ public class Area {
    }
 
    /**
-    * Write a string of characters rightwards from the given location,
-    * clipped by the current clipping rectangle.  For anything more
-    * complicated, it is best to use {@link CCBuf}.
+    * Write a string of characters rightwards from the given location.
+    * For anything more complicated, it is best to use {@link CCBuf}.
     */
    public final void set(int y, int x, int hfb, String str) {
       if (y < clip.ay || y >= clip.by || x >= clip.bx)
@@ -379,10 +378,13 @@ public class Area {
    }
 
    /**
-    * Read a coloured-character from the given location.
+    * Read a coloured-character from the given location.  Note that if
+    * this Area is a virtual area, then any part of its virtual area
+    * may have been clipped.  Attempting to read the character from a
+    * clipped part of the area returns 0.
     */
    public int get(int y, int x) {
-      if (y < 0 || x < 0 || y >= rows || x >= cols)
+      if (y < clip.ay || x < clip.ax || y >= clip.by || x >= clip.bx)
          return 0;
       return arr[base + x + y * pitch];
    }
@@ -391,39 +393,63 @@ public class Area {
     * Clear the whole area to the default colours (as specified in the
     * constructor).
     */
-   public void clr() {
-      clr(null, Console.gencc(' ', hfb));
+   public void clear() {
+      fill(null, Console.gencc(' ', hfb));
    }   
-
+   
    /**
-    * Clear the whole area to the given coloured-character, clipped
-    * by the current clipping rectangle.
+    * Clear the whole area to the given HFB colour.
     */
-   public void clr(int cch) {
-      clr(null, cch);
+   public void clear(int hfb) {
+      fill(Console.gencc(' ', hfb));
+   }
+   
+   /**
+    * Set the whole area to the given coloured-character.
+    */
+   public void fill(int cch) {
+      fill(null, cch);
    }
 
    /**
-    * Clear the given range of lines to the given coloured-character,
-    * clipped by the current clipping rectangle.
+    * Clear the given range of lines to the given HFB colour.
     */
-   public void clr(int y, int sy, int cch) {
-      clr(y, 0, sy, cols, cch);
+   public void clear(int y, int sy, int hfb) {
+      fill(y, sy, Console.gencc(' ', hfb));
    }
 
    /**
-    * Clear the given area to the given coloured-character, clipped
-    * by the current clipping rectangle.
+    * Set the given range of lines to the given coloured-character.
     */
-   public void clr(int y, int x, int sy, int sx, int cch) {
-      clr(new Rect(y, x, y + sy, x + sx), cch);
+   public void fill(int y, int sy, int cch) {
+      fill(y, 0, sy, cols, cch);
    }
 
    /**
-    * Clear the given area to the given coloured-character, clipped
-    * by the current clipping rectangle.
+    * Clear the given area to the given HFB colour.
     */
-   public void clr(Rect rect, int cch) {
+   public void clear(int y, int x, int sy, int sx, int hfb) {
+      fill(y, x, sy, sx, Console.gencc(' ', hfb));
+   }
+
+   /**
+    * Set the given area to the given coloured-character.
+    */
+   public void fill(int y, int x, int sy, int sx, int cch) {
+      fill(new Rect(y, x, y + sy, x + sx), cch);
+   }
+
+   /**
+    * Clear the given area to the given HFB colour.
+    */
+   public void clear(Rect rect, int hfb) {
+      fill(rect, Console.gencc(' ', hfb));
+   }
+
+   /**
+    * Set the given area to the given coloured-character.
+    */
+   public void fill(Rect rect, int cch) {
       rect = rect == null ? clip : clip.isect(rect);
       if (rect.isEmpty()) return;
       int sx = rect.bx - rect.ax;
@@ -458,21 +484,20 @@ public class Area {
    }
 
    /**
-    * Draw a cleared box area, with a line around its perimeter,
-    * clipped by the current clipping rectangle.
-    * @param hfb Attribute-set index
+    * Draw a cleared box area, with a line around its perimeter.
     * @param y Top row
     * @param x Left column
     * @param sy Total height of box
     * @param sx Total width of box
+    * @param hfb Attribute-set index
     */
-   public void box(int hfb, int y, int x, int sy, int sx) {
+   public void box(int y, int x, int sy, int sx, int hfb) {
       int cc = hfb << Console.ATTRSET_SHIFT;
-      clr(y, x, sy, sx, cc+' ');
-      clr(y, x+1, 1, sx-2, cc+Console.box[12]);
-      clr(y+sy-1, x+1, 1, sx-2, cc+Console.box[12]);
-      clr(y+1, x, sy-2, 1, cc+Console.box[3]);
-      clr(y+1, x+sx-1, sy-2, 1, cc+Console.box[3]);
+      fill(y, x, sy, sx, cc+' ');
+      fill(y, x+1, 1, sx-2, cc+Console.box[12]);
+      fill(y+sy-1, x+1, 1, sx-2, cc+Console.box[12]);
+      fill(y+1, x, sy-2, 1, cc+Console.box[3]);
+      fill(y+1, x+sx-1, sy-2, 1, cc+Console.box[3]);
       set(y, x, cc+Console.box[10]);
       set(y, x+sx-1, cc+Console.box[6]);
       set(y+sy-1, x, cc+Console.box[9]);

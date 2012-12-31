@@ -108,7 +108,7 @@ public class ConsoleTest1 extends ConsoleTool implements IAreaUpdateListener {
          xx += WID;
          if (xx + WID > area.cols)
             xx = 0;
-         area.clr(yy, xx, area.rows, WID, Console.gencc(' ', 0070));
+         area.clear(yy, xx, area.rows, WID, 0070);
       }
    }
 }

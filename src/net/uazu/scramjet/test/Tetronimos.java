@@ -346,7 +346,7 @@ public class Tetronimos extends ConsoleTool {
     * Redraw.
     */
    public void redraw() {
-      area.clr();
+      area.clear();
 
       int logo_sx = 19;
       int grid_sx = 24;
@@ -358,7 +358,7 @@ public class Tetronimos extends ConsoleTool {
       int hisc_sy = 17;
 
       if (tot_sx > area.cols || grid_sy+2 > area.rows) {
-         area.clr(0162);
+         area.clear(0162);
          area.set(area.rows / 2, (area.cols-16) / 2, 0162, "WINDOW TOO SMALL");
          return;
       }
@@ -484,9 +484,9 @@ public class Tetronimos extends ConsoleTool {
          return;
       }
       
-      hisc_area.clr();
+      hisc_area.clear();
       hisc_area.set(0, 0, 0171, Score.header);
-      hisc_area.clr(hisc_area.rows-1, 0, 1, hisc_area.cols, Console.gencc(' ', 0171));
+      hisc_area.clear(hisc_area.rows-1, 0, 1, hisc_area.cols, 0171);
 
       int yy = 1;
       for (Score sc : scores.getScoreBoard(hisc_area.rows-2)) {
@@ -499,7 +499,7 @@ public class Tetronimos extends ConsoleTool {
    }
 
    private void drawHelp() {
-      help_area.clr();
+      help_area.clear();
       String str = active ?
          "J/K/L/Space or L/U/R/D-arrow: Left,Turn,Right,Drop, R/Q: Restart/Quit Game" :
          "Q: Quit, N: New Game";

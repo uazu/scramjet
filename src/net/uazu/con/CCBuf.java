@@ -564,7 +564,7 @@ public class CCBuf {
       int pad = attr | ' ';
       int inv_attr = Console.invert(attr);
 
-      area.clr(rect, pad);
+      area.fill(rect, pad);
       int yy = rect.ay;
       if (yoff < 0) {
          yy -= yoff;

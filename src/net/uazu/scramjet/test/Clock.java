@@ -98,7 +98,7 @@ public class Clock extends ConsoleTool {
          int cal_hgt = area.rows >= 24 ? 10 : area.rows >= 22 ? 9 : 8;
          
          // Draw clock
-         area.clr(Console.gencc(' ', clkbg));
+         area.clear(clkbg);
          drawClock(0, 0, area.rows-cal_hgt, area.cols, cal);
          
          // Draw current month

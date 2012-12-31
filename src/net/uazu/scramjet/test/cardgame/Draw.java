@@ -50,7 +50,7 @@ public class Draw {
     * Clear the area to black.
     */
    public void clear() {
-      area.clr();
+      area.clear();
    }
    
    /**
@@ -68,7 +68,7 @@ public class Draw {
       int attr = Console.gencc(0, suit_hfb[cc.suit_num]);
       String name = cc.name;
       
-      area.clr(yy, xx, 5, 6, attr | ' ');
+      area.fill(yy, xx, 5, 6, attr | ' ');
       area.set(yy, xx+2, attr | name.charAt(0));
       area.set(yy, xx+3, attr | name.charAt(1));
       area.set(yy+4, xx+2, attr | name.charAt(0));
@@ -79,14 +79,14 @@ public class Draw {
     * Draw a card back at the given position.
     */
    public void back(int yy, int xx) {
-      area.clr(yy, xx, 5, 6, Console.gencc('|', 0027));
+      area.fill(yy, xx, 5, 6, Console.gencc('|', 0027));
    }
    
    /**
     * Draw a space where a card could go at the given position.
     */
    public void space(int yy, int xx) {
-      area.clr(yy, xx, 5, 6, Console.gencc(' ', 0071));
+      area.clear(yy, xx, 5, 6, 0071);
    }
    
    private final String[] font1 = {

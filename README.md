@@ -17,14 +17,14 @@ Released under the Apache License, Version 2.0: http://www.apache.org/licenses/L
 
 See http://uazu.net/scramjet/ for more information, screenshots, examples, etc.
 
-### Quick-Start
+### Quick-Start and Example Usage
 
 ```bash
 # Build everything
 cd src
 ./mk
 
-# Create ~/.scramjet (for first time) and start JVM
+# Start JVM (also creates ~/.scramjet the first time)
 out/scramjet -S
 
 # Kill JVM
@@ -32,10 +32,16 @@ out/scramjet -K
 
 # Start JVM (automatically) and show test page.  NOTE: you might need
 # to press ^L (redraw) to display line-characters correctly on some
-# GNOME terminals -- this seems to be a libVTE bug.  Adjust LANG and
-# TERM environment variables as required and re-run as necessary to
-# get everything working as expected on this test page.
+# GNOME terminals -- this seems to be a libVTE bug.
 out/scramjet net.uazu.scramjet.test.ConsoleTest0
+^C
+
+# If something was not working on the test page, adjust LANG and TERM
+# environment variables as required and re-run as necessary.  We need
+# -R option here to restart the JVM to get it to pick up LANG changes.
+export LANG=...
+export TERM=...
+out/scramjet -R net.uazu.scramjet.test.ConsoleTest0
 ^C
 
 # Start a game.  (NOTE: both dots and slashes are okay for package

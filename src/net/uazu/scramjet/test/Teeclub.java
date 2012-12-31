@@ -151,8 +151,8 @@ public class Teeclub extends ConsoleTool {
             yy++;
             area.set(yend, sc_xx, 0171, "                        ");
             int vbar = Console.gencc(Console.box[3], 010);
-            area.clr(yy, sc_xx, yend-yy, 1, vbar);
-            area.clr(yy, sc_xx+WID-1, yend-yy, 1, vbar);
+            area.fill(yy, sc_xx, yend-yy, 1, vbar);
+            area.fill(yy, sc_xx+WID-1, yend-yy, 1, vbar);
             drawScores(new Rect(yy, sc_xx + 2, yend, sc_xx+WID-2));
          }
          area.set(area.rows-2, (area.cols - 31)/2, 0070, "Press N for new game, Q to quit");
@@ -176,6 +176,7 @@ public class Teeclub extends ConsoleTool {
             buf.draw(area, rect, 0, true, 0120);
             return;
          }
+         area.clear(rect, 070);
          int wid = rect.bx-rect.ax;
          boolean found = false;
          int ii = 1;
